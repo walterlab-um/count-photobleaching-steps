@@ -1,9 +1,10 @@
-t_thresh = 500; % Minimum intensity change to count as a photobleaching step
-mol_thresh = 1000; % Minimum molecule intensity to analyze photobleaching steps
-report_individual_results = true; % true = plot each trace's results individually
-channel = 'acceptor'; % (For 2-channel traces files): which channel to analyze for photobleaching steps. values: 'donor' or 'acceptor'
-donor_crosstalk = 0.09; % (For 2-channel traces files): crosstalk of donor into acceptor channel, as fraction of donor-channel signal
-max_steps = 6; % Maximum expected photobleaching steps to try fitting
+%% Options
+options.snr_thresh = 2; % Minimum SNR for a bleaching event to be counted
+options.mol_thresh = 1000; % Minimum molecule intensity to analyze photobleaching steps
+options.report_individual_results = true; % true = plot each trace's results individually
+options.channel = 'acceptor'; % (For 2-channel traces files): which channel to analyze for photobleaching steps. values: 'donor' or 'acceptor'
+options.donor_crosstalk = 0.09; % (For 2-channel traces files): crosstalk of donor into acceptor channel, as fraction of donor-channel signal
+options.relative_stepsize_cutoff = 3; % Candidate photobleaching steps will be ignored if they are smaller than the largest bleaching step by at least this factor
 
 %% Get Input File Names
 fprintf(1,'Please select all the movie files for counting photobleaching steps\n')
@@ -19,7 +20,6 @@ if path == 0
     disp('No file selected; aborting.');
     return
 end
-
 cd(path);
 
 %% Cycle through all files and determine number of photobleaching steps for each trace
@@ -40,7 +40,7 @@ for n=1:nfiles
         end
     end
 
-    psteps = vertcat(psteps,countSteps(traces,t_thresh,mol_thresh,report_individual_results,max_steps));
+    psteps = vertcat(psteps,countSteps(traces,options));
 end
 
 %% Show cumulative results
