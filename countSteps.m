@@ -22,27 +22,15 @@ for m = 1:size(traces,1)
     if max(trace) < mol_thresh
         psteps(m,1) = NaN;
     else
-        idealized = smoothdata(smoothdata(trace,"movmedian",9),"movmedian",9);
-        thresh = snr_thresh*std(idealized-trace); % Threshold based on snr_thresh and noise level of current trace
-        dtrace = horzcat(zeros(1,4),idealized(5:end)-idealized(1:end-4),zeros(1,4));
+            [idealized,dtrace,thresh] = determine_transition_points(trace,snr_thresh);
         psteps(m,1) = 0;
-        for k = 2:length(dtrace)
+        for k = 2:length(dtrace)-5
             if ~fullyBleached
                 if dtrace(k) < -thresh
                     if dtrace(k-1) >= -thresh
                         psteps(m,1) = psteps(m,1)+1;
-                        % bleachFrame(k) = 1*max(idealized);
-                        if k < length(idealized-20)
-                            bleachIntensity = cat(1,bleachIntensity,idealized(k-1)-median(idealized(k+1:k+20)));
-                        else
-                            bleachIntensity = cat(1,bleachIntensity,idealized(k-1)-idealized(k+1));
-                        end
+                        bleachIntensity = cat(1,bleachIntensity,idealized(k-1)-median(idealized(k+1:k+5)));
                         bleachFrame = cat(1,bleachFrame,k);
-                        if k < length(dtrace)-20
-                            if abs(mean(idealized(k+10:k+20)) - mean(idealized(idealized<(min(idealized)+thresh)))) < thresh
-                                fullyBleached = true;
-                            end
-                        end
                     end
                 elseif dtrace(k) > thresh
                     if  psteps(m,1) > 0
@@ -52,18 +40,20 @@ for m = 1:size(traces,1)
                     end
                 end
             end
+            if abs(idealized(k-1) - min(idealized)) < thresh % if ending intensity within thresh of baseline
+                fullyBleached = true;
+            end
         end
-        % Remove photobleaching steps followed by upward steps
+        % Remove photobleaching steps preceded by upward steps
         ind = zeros(0,1);
         for n = 2:length(bleachIntensity)
-            if bleachIntensity(n)<0
+            if bleachIntensity(n-1)<0
                 ind = cat(1,ind,n-1,n);
             end
         end
         bleachIntensity(ind)=[];
         bleachFrame(ind)=[];
-        % Reassess photobleaching steps by counting only those with
-        % intensity changes at least 50% of largest bleaching step
+        % Reassess photobleaching steps by counting only those with intensity changes within a factor of (relative_stepsize_cutoff) of the largest bleaching step
         if length(bleachIntensity)>0
             ind = abs(bleachIntensity) < max(bleachIntensity)/relative_stepsize_cutoff;
             bleachIntensity(ind) = [];
@@ -91,4 +81,25 @@ end
 
 psteps = removeNaNrows(psteps);
 
+end
+
+function [idealized,dtrace,thresh] = determine_transition_points(trace,snr_thresh)
+    smoothed = smoothdata(smoothdata(trace,"movmedian",9),"movmedian",9);
+    thresh = snr_thresh*std(smoothed-trace); % Threshold based on snr_thresh and noise level of current trace
+    dtrace = horzcat(zeros(1,4),smoothed(5:end)-smoothed(1:end-4),zeros(1,4));
+    pts = find(abs(dtrace) > thresh);
+    ind = cat(2,1,pts(2:end)-pts(1:end-1)>1);
+    if ~isempty(pts)
+        pts = horzcat(pts(find(ind))); % Eliminate transition points that immediately follow other transitions
+    end
+    pts = horzcat(1,pts,length(trace));
+    idealized = trace;
+    for n = 1:length(pts)-1 % average signal for each segment
+        idealized(pts(n):pts(n+1)-1) = mean(trace(pts(n):pts(n+1)-1));
+    end
+    % Recalculate more accurate thresh based on idealization
+    thresh = snr_thresh*std(idealized-trace); 
+    dtrace = horzcat(zeros(1,1),idealized(2:end)-idealized(1:end-1));
+    % figure(1); plot(trace,'k'); hold on; plot(idealized,'r'), plot(dtrace,'b'); 
+    % hold off;
 end
