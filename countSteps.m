@@ -22,7 +22,7 @@ for m = 1:size(traces,1)
     if max(trace) < mol_thresh
         psteps(m,1) = NaN;
     else
-            [idealized,dtrace,thresh] = determine_transition_points(trace,snr_thresh);
+        [idealized,dtrace,thresh] = determine_transition_points(trace,snr_thresh);
         psteps(m,1) = 0;
         for k = 2:length(dtrace)-5
             if ~fullyBleached
@@ -86,7 +86,7 @@ end
 function [idealized,dtrace,thresh] = determine_transition_points(trace,snr_thresh)
     smoothed = smoothdata(smoothdata(trace,"movmedian",9),"movmedian",9);
     thresh = snr_thresh*std(smoothed-trace); % Threshold based on snr_thresh and noise level of current trace
-    dtrace = horzcat(zeros(1,4),smoothed(5:end)-smoothed(1:end-4),zeros(1,4));
+    dtrace = difftrace(smoothed,4);
     pts = find(abs(dtrace) > thresh);
     ind = cat(2,1,pts(2:end)-pts(1:end-1)>1);
     if ~isempty(pts)
@@ -102,4 +102,18 @@ function [idealized,dtrace,thresh] = determine_transition_points(trace,snr_thres
     dtrace = horzcat(zeros(1,1),idealized(2:end)-idealized(1:end-1));
     % figure(1); plot(trace,'k'); hold on; plot(idealized,'r'), plot(dtrace,'b'); 
     % hold off;
+end
+
+function dtrace = difftrace(trace,dframe)
+% Args:
+    % trace = intensity trace (1 x n vector) to create differential trace (dtrace) from
+    % dframe = subtraction window
+    dtrace = zeros(size(trace));
+    for n = 1:floor(dframe/2)
+        dtrace(n) = trace(n+floor(dframe/2))-trace(1);
+    end
+    for n = length(trace)-ceil(dframe/2):length(trace)
+        dtrace(n) = trace(end)-trace(n);
+    end
+    dtrace(dframe/2+1:length(trace)-dframe/2) = trace(dframe+1:end)-trace(1:end-dframe);
 end
