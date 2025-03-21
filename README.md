@@ -1,7 +1,7 @@
 # count-photobleaching-steps
 
 ## Description
-Matlab script for automated counting of stepwise photobleaching.
+Matlab script for automated counting of stepwise photobleaching in single-molecule intensity-versus-time traces.
 
 ## Requirements
 If using the OpenFRET format, please clone/download the OpenFRET library from https://github.com/simol-lab/OpenFRET and place the library's folder + all subdirectories on your Matlab path.
