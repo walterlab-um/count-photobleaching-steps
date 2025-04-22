@@ -1,0 +1,4 @@
+# Ignore MATLAB backup files
+*.asv
+*.bak
+*.orig

@@ -1,7 +1,7 @@
 %% Options
 options.snr_thresh = 3; % Minimum SNR for a bleaching event to be counted
 options.mol_thresh = 1000; % Minimum molecule intensity to analyze photobleaching steps
-options.report_individual_results = false; % true = plot each trace's results individually
+options.report_individual_results = true; % true = plot each trace's results individually
 options.channel = 'acceptor'; % (For 2-channel traces files): which channel to analyze for photobleaching steps. values: 'donor' or 'acceptor'
 options.donor_crosstalk = 0.09; % (For 2-channel traces files): crosstalk of donor into acceptor channel, as fraction of donor-channel signal
 options.relative_stepsize_cutoff = 3; % Candidate photobleaching steps will be ignored if they are smaller than the largest bleaching step by at least this factor
